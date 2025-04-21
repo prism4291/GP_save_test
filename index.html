@@ -3,20 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL & localStorage Test Tool</title>
+    <title>URL(Query) & localStorage Separate Test Tool</title>
     <style>
         body {
             font-family: sans-serif;
             padding: 20px;
             line-height: 1.6;
+            display: flex;
+            gap: 20px; /* セクション間のスペース */
+            flex-wrap: wrap; /* 画面幅が狭い場合に折り返す */
         }
-        .container {
-            max-width: 800px;
-            margin: auto;
+        .section {
+            flex: 1; /* 横幅を均等に分割 */
+            min-width: 350px; /* 最小幅 */
             border: 1px solid #ccc;
             padding: 20px;
             border-radius: 8px;
             background-color: #f9f9f9;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3 {
+            margin-top: 0;
         }
         label {
             display: block;
@@ -26,280 +33,384 @@
         input[type="text"] {
             width: calc(100% - 22px); /* padding + border */
             padding: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 10px; /* Reduce bottom margin */
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+        .input-group {
+             margin-bottom: 15px; /* Add margin below each input group */
+        }
         button {
-            padding: 10px 15px;
+            padding: 8px 12px; /* Slightly smaller buttons */
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            margin-right: 10px;
+            margin-right: 5px; /* Adjust spacing */
+            margin-top: 5px; /* Add top margin for wrapping */
         }
         button:hover {
             background-color: #0056b3;
         }
+        button.clear {
+            background-color: #dc3545;
+        }
+        button.clear:hover {
+            background-color: #c82333;
+        }
         .info {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 15px;
+            padding: 10px;
             background-color: #e9ecef;
             border: 1px solid #ced4da;
             border-radius: 4px;
-        }
-        .info h3 {
-            margin-top: 0;
+            font-size: 0.9em; /* Slightly smaller font */
+            word-break: break-all; /* 長い文字列を折り返す */
         }
         code {
             background-color: #f1f1f1;
             padding: 2px 4px;
             border-radius: 3px;
             font-family: monospace;
-            word-break: break-all; /* URLが長い場合に折り返す */
         }
         pre {
             background-color: #333;
             color: #f1f1f1;
             padding: 10px;
             border-radius: 4px;
-            overflow-x: auto; /* 横スクロール */
-            white-space: pre-wrap; /* 内容に応じて折り返し */
-            word-wrap: break-word; /* 単語の途中でも折り返し */
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.85em;
         }
-        ul {
-            padding-left: 20px;
-        }
-        li {
-            margin-bottom: 10px;
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        .full-width {
+            flex-basis: 100%; /* この要素は常に全幅を取る */
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>URL & localStorage Test Tool</h1>
-
-    <p>このツールは、URLのハッシュと`localStorage`の連携をテストします。</p>
-
-    <div>
-        <label for="dataInput">データを入力:</label>
-        <input type="text" id="dataInput" placeholder="ここにテキストを入力...">
-        <button id="saveButton">データ保存 & URL更新</button>
-        <button id="clearButton">データとURLハッシュをクリア</button>
+    <div class="section">
+        <h2>LocalStorage 管理</h2>
+        <div class="input-group">
+            <label for="lsInput1">LocalStorage パラメータ 1 (キー: ls_param1)</label>
+            <input type="text" id="lsInput1" placeholder="値を入力...">
+            <button id="saveLs1">保存</button>
+            <button id="clearLs1" class="clear">クリア</button>
+            <div class="info">現在値: <code id="lsValueDisplay1">(未設定)</code></div>
+        </div>
+        <div class="input-group">
+            <label for="lsInput2">LocalStorage パラメータ 2 (キー: ls_param2)</label>
+            <input type="text" id="lsInput2" placeholder="値を入力...">
+            <button id="saveLs2">保存</button>
+            <button id="clearLs2" class="clear">クリア</button>
+            <div class="info">現在値: <code id="lsValueDisplay2">(未設定)</code></div>
+        </div>
+         <div class="info full-width">
+            <h3>現在の LocalStorage 全内容</h3>
+            <pre id="localStorageFullDisplay">(空です)</pre>
+            <button id="refreshLocalStorageDisplay">表示更新</button>
+        </div>
     </div>
 
-    <div class="info">
-        <h3>現在の状態</h3>
-        <p><strong>入力フィールドの値:</strong> <span id="inputValueDisplay"></span></p>
-        <p><strong>現在のURL:</strong> <code id="currentUrlDisplay"></code></p>
-        <p><strong>URLハッシュの値 (デコード後):</strong> <code id="hashValueDisplay"></code></p>
-        <p><strong>localStorageの値 ('testData'キー):</strong> <code id="localStorageValueDisplay"></code></p>
+    <div class="section">
+        <h2>URL クエリパラメータ 管理</h2>
+        <div class="input-group">
+            <label for="urlInput1">URL パラメータ 1 (キー: url_param1)</label>
+            <input type="text" id="urlInput1" placeholder="値を入力...">
+            <button id="updateUrl1">URL更新</button>
+            <button id="clearUrl1" class="clear">URLからクリア</button>
+            <div class="info">現在値: <code id="urlValueDisplay1">(パラメータなし)</code></div>
+        </div>
+        <div class="input-group">
+            <label for="urlInput2">URL パラメータ 2 (キー: url_param2)</label>
+            <input type="text" id="urlInput2" placeholder="値を入力...">
+            <button id="updateUrl2">URL更新</button>
+            <button id="clearUrl2" class="clear">URLからクリア</button>
+            <div class="info">現在値: <code id="urlValueDisplay2">(パラメータなし)</code></div>
+        </div>
+         <div class="info full-width">
+            <h3>現在の URL</h3>
+            <code id="currentUrlDisplay"></code>
+        </div>
     </div>
 
-    <div class="info">
-        <h3>現在の localStorage の全内容</h3>
-        <pre id="localStorageFullDisplay"></pre>
-        <button id="refreshLocalStorageDisplay">localStorage表示を更新</button>
-    </div>
-
-     <div class="info">
+    <div class="section full-width">
+        <h1>URL(Query) & localStorage Separate Test Tool</h1>
         <h3>テスト手順</h3>
         <ul>
-            <li><strong>URL自動変更:</strong> テキストを入力し「データ保存 & URL更新」ボタンを押すと、URLの末尾（#以降）が自動的に変更されます。</li>
-            <li><strong>URL共有:</strong> 変更されたURL全体をコピーし、別のブラウザタブやシークレットウィンドウで開いてください。入力したデータが復元されるはずです。（URLから状態が復元されることを確認）</li>
-            <li><strong>localStorage自動更新:</strong> 「データ保存 & URL更新」ボタンを押すと、<code>localStorage</code> の 'testData' キーの値も更新されます。「現在の localStorage の全内容」セクションで確認できます。</li>
-            <li><strong>localStorageの分離（URLコピー）:</strong>
-                <ol>
-                    <li>タブAでデータを入力・保存します。</li>
-                    <li>タブAのURLをコピーします。</li>
-                    <li>新しいタブBでそのURLを開きます。タブBにはURLから復元されたデータが表示されます。</li>
-                    <li>タブBで開発者ツールを開き、<code>localStorage</code>を確認してください。タブAと同じ'testData'の値が入っているはずです（URLから初期化されたため）。</li>
-                    <li>タブBでデータを変更・保存します。タブBのURLと<code>localStorage</code>が更新されます。</li>
-                    <li>タブAに戻り、「localStorage表示を更新」ボタンを押すか、ページをリロードしてください。タブAの<code>localStorage</code>はタブBでの変更の影響を受けていないことを確認します。（※別タブでの変更を検知する `storage` イベントは、このツールでは表示更新に直接は連動させていませんが、開発者ツールで確認できます）</li>
-                </ol>
+            <li><strong>独立した管理:</strong> LocalStorageセクションの操作はURLに影響せず、URLクエリパラメータセクションの操作はLocalStorageに影響しません。</li>
+            <li><strong>LocalStorage:</strong>
+                <ul>
+                    <li>各「保存」ボタンで、対応するキーの値が `localStorage` に保存されます。</li>
+                    <li>「クリア」ボタンで、対応するキーの値が `localStorage` から削除されます。</li>
+                    <li>ページをリロードしても、`localStorage` に保存された値は保持され、入力欄に復元されます。</li>
+                    <li>「現在の LocalStorage 全内容」で、保存されている全てのキーと値を確認できます。</li>
+                     <li>別タブで同じページを開き、片方でLocalStorageを変更すると、もう片方のタブで `storage` イベントが（コンソールに）記録され、「表示更新」ボタンで最新の状態を確認できます。</li>
+                </ul>
             </li>
-             <li><strong>ブラウザの戻る/進む:</strong> データを何度か変更した後、ブラウザの「戻る」「進む」ボタンを使用すると、URLハッシュの変更履歴に応じて入力フィールドと表示が更新されることを確認してください。</li>
-             <li><strong>クリア:</strong> 「データとURLハッシュをクリア」ボタンを押すと、入力フィールド、URLハッシュ、<code>localStorage</code>の'testData'がクリアされます。</li>
+            <li><strong>URL クエリパラメータ:</strong>
+                <ul>
+                    <li>各「URL更新」ボタンで、対応するキーと値がURLのクエリパラメータ (`?key=value&...`) に追加/更新されます。**ページはリロードされません**。</li>
+                    <li>「URLからクリア」ボタンで、対応するキーがURLクエリパラメータから削除されます。</li>
+                    <li>URLが変更されると、ブラウザの履歴に追加されます。「戻る」「進む」ボタンでURLの状態遷移をテストできます。</li>
+                    <li>URLパラメータを含むURLをコピーし、別のタブやブラウザで開くと、そのURLのパラメータ値が入力欄に初期表示されます。</li>
+                </ul>
+            </li>
+            <li><strong>分離の確認:</strong> URLをコピーして新しいタブBで開いた後、タブBでLocalStorageの値やURLパラメータを変更しても、元のタブAのLocalStorageやURL（タブAをリロードしない限り）は直接影響を受けないことを確認してください。</li>
         </ul>
     </div>
-</div>
 
 <script>
-    const dataInput = document.getElementById('dataInput');
-    const saveButton = document.getElementById('saveButton');
-    const clearButton = document.getElementById('clearButton');
-    const inputValueDisplay = document.getElementById('inputValueDisplay');
-    const currentUrlDisplay = document.getElementById('currentUrlDisplay');
-    const hashValueDisplay = document.getElementById('hashValueDisplay');
-    const localStorageValueDisplay = document.getElementById('localStorageValueDisplay');
-    const localStorageFullDisplay = document.getElementById('localStorageFullDisplay');
-    const refreshLocalStorageDisplay = document.getElementById('refreshLocalStorageDisplay');
+    // --- 定数定義 ---
+    const LS_KEY1 = 'ls_param1';
+    const LS_KEY2 = 'ls_param2';
+    const URL_PARAM1 = 'url_param1';
+    const URL_PARAM2 = 'url_param2';
 
-    const STORAGE_KEY = 'testData'; // localStorageで使用するキー
+    // --- DOM 要素取得 ---
+    const lsInput1 = document.getElementById('lsInput1');
+    const lsInput2 = document.getElementById('lsInput2');
+    const saveLs1Btn = document.getElementById('saveLs1');
+    const clearLs1Btn = document.getElementById('clearLs1');
+    const saveLs2Btn = document.getElementById('saveLs2');
+    const clearLs2Btn = document.getElementById('clearLs2');
+    const lsValueDisplay1 = document.getElementById('lsValueDisplay1');
+    const lsValueDisplay2 = document.getElementById('lsValueDisplay2');
+    const localStorageFullDisplay = document.getElementById('localStorageFullDisplay');
+    const refreshLocalStorageDisplayBtn = document.getElementById('refreshLocalStorageDisplay');
+
+    const urlInput1 = document.getElementById('urlInput1');
+    const urlInput2 = document.getElementById('urlInput2');
+    const updateUrl1Btn = document.getElementById('updateUrl1');
+    const clearUrl1Btn = document.getElementById('clearUrl1');
+    const updateUrl2Btn = document.getElementById('updateUrl2');
+    const clearUrl2Btn = document.getElementById('clearUrl2');
+    const urlValueDisplay1 = document.getElementById('urlValueDisplay1');
+    const urlValueDisplay2 = document.getElementById('urlValueDisplay2');
+    const currentUrlDisplay = document.getElementById('currentUrlDisplay');
 
     // --- 関数定義 ---
 
-    // localStorageの内容全体を表示する関数
+    // localStorageの内容全体を表示
     function displayFullLocalStorage() {
         try {
             const items = { ...localStorage };
             localStorageFullDisplay.textContent = Object.keys(items).length > 0
-                ? JSON.stringify(items, null, 2) // 見やすく整形
+                ? JSON.stringify(items, null, 2)
                 : '(localStorageは空です)';
         } catch (e) {
-            localStorageFullDisplay.textContent = 'localStorageの読み取り中にエラーが発生しました: ' + e.message;
+            localStorageFullDisplay.textContent = 'localStorage読取エラー: ' + e.message;
             console.error("Error reading localStorage:", e);
         }
     }
 
-    // URLハッシュからデータを取得する関数
-    function getDataFromHash() {
+    // 指定キーのlocalStorageを保存
+    function saveLocalStorage(key, inputElement, displayElement) {
         try {
-            // '#'を除去し、'key=value'形式を想定
-            const hash = window.location.hash.substring(1);
-            if (hash) {
-                // 簡単なキーバリュー形式（例: data=...）を想定
-                 if (hash.startsWith('data=')) {
-                    // 'data='の部分を除去し、デコードする
-                    return decodeURIComponent(hash.substring(5));
-                 }
-                 // もしキーがない形式なら、ハッシュ全体をデータとみなす（後方互換性のため）
-                 // return decodeURIComponent(hash);
+            const value = inputElement.value;
+            localStorage.setItem(key, value);
+            displayElement.textContent = value || '(空)';
+            console.log(`Saved to localStorage [${key}]: ${value}`);
+            displayFullLocalStorage(); // 全体表示も更新
+        } catch (e) {
+            console.error(`Error saving to localStorage [${key}]:`, e);
+            alert(`LocalStorageへの保存中にエラーが発生しました: ${e.message}`);
+        }
+    }
+
+    // 指定キーのlocalStorageをクリア
+    function clearLocalStorage(key, inputElement, displayElement) {
+        try {
+            localStorage.removeItem(key);
+            inputElement.value = '';
+            displayElement.textContent = '(未設定)';
+            console.log(`Cleared localStorage key [${key}]`);
+            displayFullLocalStorage(); // 全体表示も更新
+        } catch (e) {
+            console.error(`Error clearing localStorage [${key}]:`, e);
+            alert(`LocalStorageのクリア中にエラーが発生しました: ${e.message}`);
+        }
+    }
+
+    // ページ読み込み時にlocalStorageから値を読み込む
+    function loadLocalStorage() {
+        try {
+            const val1 = localStorage.getItem(LS_KEY1);
+            const val2 = localStorage.getItem(LS_KEY2);
+            if (val1 !== null) {
+                lsInput1.value = val1;
+                lsValueDisplay1.textContent = val1 || '(空)';
+            } else {
+                 lsValueDisplay1.textContent = '(未設定)';
             }
+            if (val2 !== null) {
+                lsInput2.value = val2;
+                lsValueDisplay2.textContent = val2 || '(空)';
+            } else {
+                lsValueDisplay2.textContent = '(未設定)';
+            }
+            displayFullLocalStorage();
         } catch (e) {
-            console.error("Error parsing hash:", e);
+            console.error("Error loading from localStorage:", e);
         }
-        return null; // ハッシュがない、またはパース失敗
     }
 
-    // localStorageからデータを取得する関数
-    function getDataFromLocalStorage() {
+    // URLクエリパラメータを更新 (リロードなし)
+    function updateUrlParams(paramsToUpdate) {
         try {
-            return localStorage.getItem(STORAGE_KEY);
+            const currentUrl = new URL(window.location.href);
+            const searchParams = currentUrl.searchParams;
+
+            for (const key in paramsToUpdate) {
+                const value = paramsToUpdate[key];
+                if (value !== null && value !== undefined && value !== '') {
+                    searchParams.set(key, value);
+                    console.log(`Set URL parameter [${key}]=${value}`);
+                } else {
+                    // 値が空の場合はパラメータを削除する挙動にする（空文字を設定したい場合は要調整）
+                    if (searchParams.has(key)) {
+                       searchParams.delete(key);
+                       console.log(`Deleted URL parameter [${key}] because value is empty`);
+                    }
+                }
+            }
+
+            // 新しいURLを生成 (searchParams.toString()はエンコードしてくれる)
+            // ハッシュがある場合は維持する
+            const newUrl = `${currentUrl.origin}${currentUrl.pathname}?${searchParams.toString()}${currentUrl.hash}`;
+
+            // history.pushStateでURLを更新し、履歴に追加
+            // 第1引数: stateオブジェクト (popstateイベントで取得可能)
+            // 第2引数: title (現在はほとんどのブラウザで無視される)
+            // 第3引数: new URL
+            history.pushState({ params: paramsToUpdate }, '', newUrl);
+            console.log("URL updated to:", newUrl);
+
+            // 表示を更新
+            updateUrlDisplays();
+
         } catch (e) {
-            console.error("Error reading from localStorage:", e);
-            return null;
+            console.error("Error updating URL parameters:", e);
+            alert(`URLパラメータの更新中にエラーが発生しました: ${e.message}`);
         }
     }
 
-    // 全ての表示を更新する関数
-    function updateDisplays(currentInputValue) {
-        inputValueDisplay.textContent = currentInputValue || '(空)';
-        currentUrlDisplay.textContent = window.location.href;
-        hashValueDisplay.textContent = getDataFromHash() || '(ハッシュなし)';
-        localStorageValueDisplay.textContent = getDataFromLocalStorage() || '(未設定)';
-        displayFullLocalStorage(); // localStorage全体の表示も更新
-    }
-
-    // データを保存し、URLとlocalStorageを更新する関数
-    function saveData() {
-        const dataToSave = dataInput.value;
-        try {
-            // 1. localStorageに保存
-            localStorage.setItem(STORAGE_KEY, dataToSave);
-            console.log(`Saved to localStorage [${STORAGE_KEY}]:`, dataToSave);
-
-            // 2. URLハッシュを更新 (空文字でもハッシュを設定する)
-            //    'data=' というキーを付けることで、他のハッシュとの区別をしやすくする
-            const newHash = dataToSave ? `data=${encodeURIComponent(dataToSave)}` : '';
-             // history.pushStateではなくlocation.hashを使うことで、履歴に残り、戻る/進むが可能になる
-            window.location.hash = newHash;
-            console.log("Updated URL hash to:", newHash || '(empty)');
-
-
-            // 3. 表示を更新 (ハッシュ変更イベントが非同期で発火する可能性があるので、即時更新も行う)
-            //    ただし、hashchangeイベントで更新するので、ここでは最低限の表示更新に留めても良い
-             updateDisplays(dataToSave);
-
-        } catch (e) {
-            console.error("Error saving data:", e);
-            alert("データの保存中にエラーが発生しました: " + e.message);
-        }
-    }
-
-    // データをクリアする関数
-    function clearData() {
+    // 指定されたURLクエリパラメータをクリア
+    function clearUrlParams(paramNames, inputElements, displayElements) {
          try {
-            dataInput.value = ''; // 入力フィールドをクリア
-            localStorage.removeItem(STORAGE_KEY); // localStorageから削除
-            window.location.hash = ''; // URLハッシュを削除
-             console.log(`Cleared data for key [${STORAGE_KEY}] and URL hash.`);
+            const currentUrl = new URL(window.location.href);
+            const searchParams = currentUrl.searchParams;
+            let changed = false;
 
-             // 表示を即時更新
-             updateDisplays('');
+            paramNames.forEach(key => {
+                if (searchParams.has(key)) {
+                    searchParams.delete(key);
+                    console.log(`Deleted URL parameter [${key}]`);
+                    changed = true;
+                }
+            });
+
+            if (changed) {
+                 const newUrl = `${currentUrl.origin}${currentUrl.pathname}?${searchParams.toString()}${currentUrl.hash}`;
+                 // replaceStateを使うと履歴に残らない（クリア操作なのでこちらの方が適切かも）
+                 // pushStateを使うとクリア操作も履歴に残る
+                 history.pushState({ cleared: paramNames }, '', newUrl); // pushStateで履歴に残す
+                 // history.replaceState({ cleared: paramNames }, '', newUrl); // replaceStateで履歴を置き換える
+                 console.log("URL updated after clearing params:", newUrl);
+            }
+
+             // 対応する入力フィールドと表示もクリア
+             paramNames.forEach((key, index) => {
+                 if (inputElements[index]) inputElements[index].value = '';
+                 if (displayElements[index]) displayElements[index].textContent = '(パラメータなし)';
+             });
+
+             // 全体のURL表示を更新
+             updateUrlDisplays();
 
         } catch (e) {
-            console.error("Error clearing data:", e);
-            alert("データのクリア中にエラーが発生しました: " + e.message);
+            console.error("Error clearing URL parameters:", e);
+            alert(`URLパラメータのクリア中にエラーが発生しました: ${e.message}`);
         }
     }
 
+    // URL関連の表示を更新する
+    function updateUrlDisplays() {
+        currentUrlDisplay.textContent = window.location.href;
+        const searchParams = new URLSearchParams(window.location.search);
+        const urlVal1 = searchParams.get(URL_PARAM1);
+        const urlVal2 = searchParams.get(URL_PARAM2);
+        urlValueDisplay1.textContent = urlVal1 !== null ? urlVal1 : '(パラメータなし)';
+        urlValueDisplay2.textContent = urlVal2 !== null ? urlVal2 : '(パラメータなし)';
+    }
 
-    // ページ読み込み時とハッシュ変更時の処理
-    function handleStateChange() {
-        console.log("handleStateChange triggered by:", window.location.hash);
-        // 優先順位： 1. URLハッシュ -> 2. LocalStorage -> 3. デフォルト（空）
-        let initialData = getDataFromHash(); // まずURLハッシュから試す
 
-        if (initialData === null) {
-            // ハッシュにデータがない場合、localStorageを確認
-            console.log("No data in hash, checking localStorage...");
-            initialData = getDataFromLocalStorage();
-             // localStorageにもデータがあれば、それをURLハッシュにも反映させる（任意）
-             // if (initialData !== null) {
-             //     console.log("Found data in localStorage, updating hash (optional step)");
-             //     window.location.hash = initialData ? `data=${encodeURIComponent(initialData)}` : '';
-             // }
-        } else {
-            // ハッシュからデータを取得した場合、念のためlocalStorageも同期させる
-             // (例えば、URL直接アクセス時にlocalStorageをURLに合わせる)
-             console.log("Data found in hash, synchronizing localStorage.");
-              try {
-                 localStorage.setItem(STORAGE_KEY, initialData);
-             } catch (e) {
-                 console.error("Error syncing localStorage from hash:", e);
-             }
+    // ページ読み込み時やpopstate時にURLパラメータから値を読み込む
+    function loadUrlParams() {
+        try {
+            console.log("Loading URL parameters from:", window.location.search);
+            const searchParams = new URLSearchParams(window.location.search);
+            const val1 = searchParams.get(URL_PARAM1);
+            const val2 = searchParams.get(URL_PARAM2);
+
+            urlInput1.value = val1 || '';
+            urlInput2.value = val2 || '';
+
+            updateUrlDisplays(); // URL関連の表示を更新
+        } catch (e) {
+            console.error("Error loading URL parameters:", e);
         }
-
-        // 最終的なデータ（ハッシュ or localStorage or 空）を入力フィールドに設定
-        dataInput.value = initialData || '';
-
-        // すべての表示を更新
-        updateDisplays(dataInput.value);
     }
 
     // --- イベントリスナーの設定 ---
 
-    // 保存ボタンのクリックイベント
-    saveButton.addEventListener('click', saveData);
+    // LocalStorage 保存/クリア ボタン
+    saveLs1Btn.addEventListener('click', () => saveLocalStorage(LS_KEY1, lsInput1, lsValueDisplay1));
+    clearLs1Btn.addEventListener('click', () => clearLocalStorage(LS_KEY1, lsInput1, lsValueDisplay1));
+    saveLs2Btn.addEventListener('click', () => saveLocalStorage(LS_KEY2, lsInput2, lsValueDisplay2));
+    clearLs2Btn.addEventListener('click', () => clearLocalStorage(LS_KEY2, lsInput2, lsValueDisplay2));
+    refreshLocalStorageDisplayBtn.addEventListener('click', displayFullLocalStorage);
 
-    // クリアボタンのクリックイベント
-    clearButton.addEventListener('click', clearData);
+    // URL 更新/クリア ボタン
+    updateUrl1Btn.addEventListener('click', () => updateUrlParams({ [URL_PARAM1]: urlInput1.value }));
+    clearUrl1Btn.addEventListener('click', () => clearUrlParams([URL_PARAM1], [urlInput1], [urlValueDisplay1]));
+    updateUrl2Btn.addEventListener('click', () => updateUrlParams({ [URL_PARAM2]: urlInput2.value }));
+    clearUrl2Btn.addEventListener('click', () => clearUrlParams([URL_PARAM2], [urlInput2], [urlValueDisplay2]));
 
-
-    // localStorage表示更新ボタンのクリックイベント
-    refreshLocalStorageDisplay.addEventListener('click', displayFullLocalStorage);
-
-    // URLハッシュが変更されたときのイベント (戻る/進む、プログラムによる変更など)
-    window.addEventListener('hashchange', handleStateChange);
-
-    // ページが読み込まれたときの初期化処理
+    // ページ読み込み完了時の初期化
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("DOM Content Loaded. Initializing state...");
-        handleStateChange(); // 初期状態を設定
+        console.log("DOM Content Loaded. Initializing...");
+        loadLocalStorage(); // localStorageから読み込み
+        loadUrlParams();    // URLパラメータから読み込み
+        // 最初のURL表示
+        currentUrlDisplay.textContent = window.location.href;
     });
 
-    // (オプション) 別タブでlocalStorageが変更されたことを検知するイベント
+    // ブラウザの戻る/進むボタンが押されたときの処理
+    window.addEventListener('popstate', (event) => {
+        console.log("Popstate event triggered:", event.state); // pushStateで設定したstateオブジェクトが取れる
+        // URLが変わっているので、URLパラメータを再読み込みして表示に反映
+        loadUrlParams();
+    });
+
+    // 別タブでのlocalStorage変更検知
     window.addEventListener('storage', (event) => {
         console.log("Storage event detected:", event);
-        // このイベントは、*他の*ウィンドウ/タブでlocalStorageが変更された場合にのみ発生する
-        if (event.key === STORAGE_KEY || event.key === null) { // keyがnullの場合はclear()された時
-            console.log(`localStorage changed in another tab/window. Key: ${event.key}, Old: ${event.oldValue}, New: ${event.newValue}`);
-            // 必要であれば、このタブの表示も更新する
-            // 例: localStorageValueDisplay.textContent = event.newValue || '(未設定)';
-             displayFullLocalStorage(); // localStorage全体の表示は更新しておく
+        if (event.key === LS_KEY1 || event.key === LS_KEY2 || event.key === null) {
+            console.log(`LocalStorage changed in another tab. Key: ${event.key}, Old: ${event.oldValue}, New: ${event.newValue}`);
+            // 必要に応じて、こちらのタブのlocalStorage表示も更新
+            if (event.key === LS_KEY1) {
+                lsValueDisplay1.textContent = event.newValue !== null ? event.newValue : '(未設定)';
+            } else if (event.key === LS_KEY2) {
+                lsValueDisplay2.textContent = event.newValue !== null ? event.newValue : '(未設定)';
+            }
+            // 全体表示は常に更新
+            displayFullLocalStorage();
+            // 注意: 入力フィールドの値は自動では更新しません。ユーザーの入力を妨げないため。
         }
     });
 
